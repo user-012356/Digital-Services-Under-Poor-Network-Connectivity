@@ -1,0 +1,110 @@
+Architecture flow
+                ┌───────────────┐
+                │     USER      │
+                │ Mobile / Web  │
+                └───────┬───────┘
+                        ↓
+              ┌───────────────────┐
+              │  Offline-First    │
+              │    Application    │
+              └─────────┬─────────┘
+                        ↓
+              ┌───────────────────┐
+              │   Local Storage   │
+              │ SQLite / IndexedDB│
+              └─────────┬─────────┘
+                        ↓
+              ┌───────────────────┐
+              │   Event Queue     │
+              │ Pending Operations │
+              └─────────┬─────────┘
+                        ↓
+              ┌───────────────────┐
+              │ Connectivity      │
+              │ Detection         │
+              └───────┬─────┬─────┘
+                      │     │
+             Available│     │Unavailable/
+                      │     │Limited
+                      ↓     ↓
+              ┌──────────┐ ┌──────────────┐
+              │ HTTPS /  │ │ SMS / USSD   │
+              │ API Sync │ │ P2P / DTN    │
+              └────┬─────┘ └──────┬───────┘
+                   │              │
+                   └──────┬───────┘
+                          ↓
+                ┌───────────────────┐
+                │ Synchronization   │
+                │ & Conflict        │
+                │ Resolution        │
+                └─────────┬─────────┘
+                          ↓
+                ┌───────────────────┐
+                │ Central / Edge    │
+                │ Service Layer     │
+                └─────────┬─────────┘
+                          ↓
+                ┌───────────────────┐
+                │ Essential Digital │
+                │ Services          │
+                └───────────────────┘
+1. User & Application Layer
+
+The user interacts through a mobile or web application. The application is designed to remain functional even when the network is unavailable instead of simply displaying an error.
+
+2. Local Storage
+
+The application maintains a local database such as SQLite or IndexedDB. Data can be read and updated locally without waiting for a server response.
+
+This removes network latency from basic operations.
+
+3. Persistent Event Queue
+
+Actions performed while offline are placed into a durable queue.
+
+For example:
+
+User submits request
+        ↓
+Saved locally
+        ↓
+Added to queue
+        ↓
+Waiting for connectivity
+
+The queue prevents user actions from being lost during an outage.
+
+4. Connectivity Detection
+
+The application determines whether normal connectivity is available.
+
+Good connectivity: synchronize through the normal API.
+
+Poor/no connectivity: continue locally and potentially use fallback mechanisms such as SMS, USSD, peer-to-peer communication, or DTN, depending on the service requirements.
+
+5. Synchronization Layer
+
+When connectivity returns, queued operations are transmitted to the backend.
+
+This layer handles:
+
+Retries
+Batching
+Idempotency
+Acknowledgements
+Duplicate prevention
+Conflict resolution
+6. Central / Edge Services
+
+The backend receives synchronized data and processes it. Edge/local infrastructure can also be used where deploying a nearby service reduces dependence on distant cloud connectivity.
+
+7. Essential Service Layer
+
+The final layer provides the actual service—such as healthcare, financial, government, education, logistics, or emergency functionality.
+
+Security across the architecture
+
+Security should apply throughout the entire pipeline:
+
+User → Device → Local Storage → Queue → Network → Synchronization → Server
